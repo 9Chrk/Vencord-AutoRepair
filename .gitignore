@@ -1,0 +1,5 @@
+runtime/
+tests/.tmp/
+config.json
+*.log
+*.zip

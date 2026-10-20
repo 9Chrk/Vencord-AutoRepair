@@ -1,0 +1,7 @@
+{
+  "discordPath": "%LOCALAPPDATA%\\Discord",
+  "pollSeconds": 15,
+  "settleSeconds": 30,
+  "retrySeconds": 300,
+  "restartDiscord": true
+}

@@ -1,0 +1,33 @@
+name: Verification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PowerShell syntax
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = Get-ChildItem -Recurse -File -Include *.ps1,*.psm1 |
+            Where-Object { $_.FullName -notmatch '[\\/]runtime[\\/]|[\\/]\.tmp[\\/]' }
+          foreach ($file in $files) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$parseErrors)
+            if ($parseErrors.Count) { throw ($parseErrors | Out-String) }
+          }
+      - name: Test with isolated fixtures
+        shell: powershell
+        run: .\tests\Verify-AutoUpdate.ps1
+      - name: Check whitespace
+        shell: powershell
+        run: git diff --check HEAD
