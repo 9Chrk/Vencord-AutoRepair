@@ -2,7 +2,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-Import-Module (Join-Path $root 'VencordAutoUpdate.psm1') -Force
+Import-Module (Join-Path $root 'VencordAutoRepair.psm1') -Force
 $fixture = Join-Path $PSScriptRoot ('.tmp\' + [guid]::NewGuid().ToString('N'))
 $discordRoot = Join-Path $fixture 'Discord'
 $vencordRoot = Join-Path $fixture "Vencord test user's"
@@ -32,13 +32,13 @@ try {
     $configRoot = Join-Path $fixture 'Configuration'
     New-Item -ItemType Directory -Path $configRoot -Force | Out-Null
     Copy-Item -LiteralPath (Join-Path $root 'config.example.json') -Destination (Join-Path $configRoot 'config.example.json')
-    $config = Get-AutoUpdateConfig $configRoot
+    $config = Get-AutoRepairConfig $configRoot
     Assert-True ($config.discordPath -eq (Join-Path $env:LOCALAPPDATA 'Discord')) 'Configuration generique : chemin de la session Windows'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $configRoot 'config.json'))) 'Lecture des valeurs par defaut sans creer de configuration locale'
     $config.discordPath = Join-Path $fixture 'Discord custom'
     $config.restartDiscord = $false
     $config | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $configRoot 'config.json') -Encoding UTF8
-    $loaded = Get-AutoUpdateConfig $configRoot
+    $loaded = Get-AutoRepairConfig $configRoot
     Assert-True ($loaded.discordPath -eq $config.discordPath -and -not $loaded.restartDiscord) 'La configuration locale et le choix sans redemarrage sont respectes'
     $badConfigs = @(
         @{ Key = 'pollSeconds'; Value = 0 },
@@ -58,12 +58,12 @@ try {
         $copy.($invalid.Key) = $invalid.Value
         $copy | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $configRoot 'config.json') -Encoding UTF8
         $rejected = $false
-        try { $null = Get-AutoUpdateConfig $configRoot } catch { $rejected = $true }
+        try { $null = Get-AutoRepairConfig $configRoot } catch { $rejected = $true }
         Assert-True $rejected ('Configuration invalide refusee : ' + $invalid.Key + '=' + $invalid.Value)
     }
     [IO.File]::WriteAllText((Join-Path $configRoot 'config.json'), '{}')
     $rejected = $false
-    try { $null = Get-AutoUpdateConfig $configRoot } catch { $rejected = $true }
+    try { $null = Get-AutoRepairConfig $configRoot } catch { $rejected = $true }
     Assert-True $rejected 'Configuration incomplete refusee'
     Assert-True ($null -eq (Get-DiscordSnapshot $discordRoot)) 'Discord absent : aucune action'
     Add-FixtureVersion '1.0.9'
@@ -102,7 +102,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $discordRoot 'app-1.0.11\resources\app.asar'), 'original Discord')
     $snapshot = Get-DiscordSnapshot $discordRoot
 
-    $module = Get-Module VencordAutoUpdate
+    $module = Get-Module VencordAutoRepair
     $exitedCount = & $module {
         function script:Get-Process {
             param($Name, $ErrorAction)
@@ -121,11 +121,11 @@ try {
         @(Get-DiscordProcesses 'C:\fixture\Discord').Count
     }
     Assert-True ($exitedCount -eq 0) 'Processus termine pendant la detection : ignore apres rafraichissement'
-    Remove-Module VencordAutoUpdate
-    Import-Module (Join-Path $root 'VencordAutoUpdate.psm1') -Force
+    Remove-Module VencordAutoRepair
+    Import-Module (Join-Path $root 'VencordAutoRepair.psm1') -Force
 
     # Exercise repair verification without ever launching an installer or stopping Discord.
-    $module = Get-Module VencordAutoUpdate
+    $module = Get-Module VencordAutoRepair
     & $module {
         function script:Get-OfficialInstaller { param($RuntimePath); return 'FAKE-NOT-EXECUTED.exe' }
         function script:Get-DiscordProcesses { param($DiscordPath); return @() }
@@ -175,7 +175,7 @@ try {
     Assert-True $rejected 'Processus de mise a jour actif : aucune reparation'
     Write-Output ('{0} controles reussis.' -f $script:passed)
 } finally {
-    Remove-Module VencordAutoUpdate -ErrorAction SilentlyContinue
+    Remove-Module VencordAutoRepair -ErrorAction SilentlyContinue
     # Resolve and constrain the target before recursive cleanup, in this PowerShell only.
     $allowed = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '.tmp')).TrimEnd('\') + '\'
     $target = [IO.Path]::GetFullPath($fixture)

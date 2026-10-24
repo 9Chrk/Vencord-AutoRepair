@@ -27,7 +27,7 @@ jobs:
           }
       - name: Test with isolated fixtures
         shell: powershell
-        run: .\tests\Verify-AutoUpdate.ps1
+        run: .\tests\Verify-AutoRepair.ps1
       - name: Check whitespace
         shell: powershell
         run: git diff --check HEAD

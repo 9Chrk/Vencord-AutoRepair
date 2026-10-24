@@ -3,8 +3,8 @@
 param([switch]$Once, [switch]$CheckOnly)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'VencordAutoUpdate.psm1') -Force
-$config = Get-AutoUpdateConfig -ProjectPath $PSScriptRoot
+Import-Module (Join-Path $PSScriptRoot 'VencordAutoRepair.psm1') -Force
+$config = Get-AutoRepairConfig -ProjectPath $PSScriptRoot
 $runtime = Join-Path $PSScriptRoot 'runtime'
 $vencord = if ($env:VENCORD_USER_DATA_DIR) { $env:VENCORD_USER_DATA_DIR }
     elseif ($env:DISCORD_USER_DATA_DIR) { Join-Path (Split-Path $env:DISCORD_USER_DATA_DIR -Parent) 'VencordData' }
@@ -26,15 +26,15 @@ try {
     $state = $null
     if (Test-Path -LiteralPath $stateFile) {
         try { $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json; $null = $state.version }
-        catch { Write-AutoUpdateLog $runtime 'Etat illisible : verification des fichiers a nouveau.'; $state = $null }
+        catch { Write-AutoRepairLog $runtime 'Etat illisible : verification des fichiers a nouveau.'; $state = $null }
     }
     $lastSignature = ''
     $stableSince = [DateTime]::UtcNow
     $retryAfter = [DateTime]::MinValue
-    Write-AutoUpdateLog $runtime ('Surveillance demarree (verification toutes les {0} secondes).' -f $config.pollSeconds)
+    Write-AutoRepairLog $runtime ('Surveillance demarree (verification toutes les {0} secondes).' -f $config.pollSeconds)
     do {
         if (Test-Path -LiteralPath (Join-Path $runtime 'stop.request')) {
-            Write-AutoUpdateLog $runtime 'Arret de la surveillance demande.'
+            Write-AutoRepairLog $runtime 'Arret de la surveillance demande.'
             break
         }
         try {
@@ -49,25 +49,25 @@ try {
                 $reason = Get-RepairReason $snapshot $state (Test-VencordPatch $snapshot $vencord)
                 $settled = ([DateTime]::UtcNow - $stableSince).TotalSeconds -ge $config.settleSeconds
                 if ($reason -and $settled -and [DateTime]::UtcNow -ge $retryAfter) {
-                    Write-AutoUpdateLog $runtime $reason
+                    Write-AutoRepairLog $runtime $reason
                     $snapshot = Invoke-VencordRepair -DiscordPath $config.discordPath -VencordPath $vencord `
                         -RuntimePath $runtime -Snapshot $snapshot -RestartDiscord $config.restartDiscord
                     $state = @{ version = $snapshot.Version; verifiedAt = [DateTime]::UtcNow.ToString('o') }
                     $state | ConvertTo-Json | Set-Content -LiteralPath ($stateFile + '.tmp') -Encoding UTF8
                     Move-Item -LiteralPath ($stateFile + '.tmp') -Destination $stateFile -Force
-                    Write-AutoUpdateLog $runtime ('Vencord verifie sur Discord {0}.' -f $snapshot.Version)
+                    Write-AutoRepairLog $runtime ('Vencord verifie sur Discord {0}.' -f $snapshot.Version)
                     if ($Once) { break }
                 } elseif (-not $reason) {
                     if (-not $state) {
                         $state = @{ version = $snapshot.Version; verifiedAt = [DateTime]::UtcNow.ToString('o') }
                         $state | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
-                        Write-AutoUpdateLog $runtime ('Vencord deja present sur Discord {0}.' -f $snapshot.Version)
+                        Write-AutoRepairLog $runtime ('Vencord deja present sur Discord {0}.' -f $snapshot.Version)
                     }
                     if ($Once) { break }
                 }
             }
         } catch {
-            Write-AutoUpdateLog $runtime ('ERREUR : ' + $_.Exception.Message)
+            Write-AutoRepairLog $runtime ('ERREUR : ' + $_.Exception.Message)
             if ($Once) { throw }
             $retryAfter = [DateTime]::UtcNow.AddSeconds($config.retrySeconds)
             $lastSignature = ''

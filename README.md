@@ -1,11 +1,11 @@
-# Vencord AutoUpdate
+# Vencord AutoRepair
 
 ![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-blue?style=flat-square)
 ![PowerShell 5.1](https://img.shields.io/badge/PowerShell-5.1-5391FE?style=flat-square)
 ![Licence MIT](https://img.shields.io/badge/Licence-MIT-green?style=flat-square)
-[![Vérification](https://github.com/9Chrk/Vencord-AutoUpdate/actions/workflows/verify.yml/badge.svg)](https://github.com/9Chrk/Vencord-AutoUpdate/actions/workflows/verify.yml)
+[![Vérification](https://github.com/9Chrk/Vencord-AutoRepair/actions/workflows/verify.yml/badge.svg)](https://github.com/9Chrk/Vencord-AutoRepair/actions/workflows/verify.yml)
 
-Vencord AutoUpdate est un outil de **réparation automatique de Vencord après les mises à jour de Discord**, développé en **PowerShell pour Windows**. Il surveille votre installation de Discord Stable, réapplique Vencord avec son installateur officiel lorsque nécessaire, puis relance Discord s’il était ouvert.
+Vencord AutoRepair est un outil de **réparation automatique de Vencord après les mises à jour de Discord**, développé en **PowerShell pour Windows**. Il surveille votre installation de Discord Stable, réapplique Vencord avec son installateur officiel lorsque nécessaire, puis relance Discord s’il était ouvert.
 
 La surveillance fonctionne en arrière-plan et démarre avec votre session Windows. Les chemins par défaut sont déduits de votre compte utilisateur ; vous pouvez adapter les délais et le comportement dans un fichier de configuration local.
 
@@ -66,8 +66,8 @@ Le projet cible **Discord Stable sous Windows**. Les éditions PTB/Canary, Micro
 Avec Git, ouvrez un terminal dans le dossier où vous souhaitez conserver le projet :
 
 ```powershell
-git clone https://github.com/9Chrk/Vencord-AutoUpdate.git
-cd Vencord-AutoUpdate
+git clone https://github.com/9Chrk/Vencord-AutoRepair.git
+cd Vencord-AutoRepair
 ```
 
 Sans Git, utilisez **Code → Download ZIP** sur cette page, puis extrayez **tout le contenu** de l’archive dans un dossier permanent. Ouvrez ensuite un terminal dans ce dossier. N’exécutez pas les scripts directement depuis le ZIP.
@@ -93,10 +93,12 @@ Cette commande affiche la version de Discord, son chemin et la présence de Venc
 Depuis un terminal **normal, sans « Exécuter en tant qu’administrateur »** :
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AutoUpdate.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AutoRepair.ps1
 ```
 
-Le script crée et démarre la tâche **Vencord AutoUpdate** pour votre compte Windows. Elle se relance à chaque ouverture de session, fonctionne sur batterie et n’a pas de limite de durée. Si `config.json` n’existe pas encore, il est créé depuis l’exemple.
+Le script crée et démarre la tâche **Vencord AutoRepair** pour votre compte Windows. Elle se relance à chaque ouverture de session, fonctionne sur batterie et n’a pas de limite de durée. Si `config.json` n’existe pas encore, il est créé depuis l’exemple.
+
+Si vous utilisiez la version nommée **Vencord AutoUpdate**, relancez simplement `Install-AutoRepair.ps1` depuis le même dossier : l’ancienne tâche est remplacée par **Vencord AutoRepair**, en conservant votre configuration et l’état local.
 
 > La première activation peut réparer Vencord immédiatement après le délai de stabilité. Avec `restartDiscord: true`, Discord sera fermé puis relancé s’il était ouvert : cela peut interrompre un appel en cours.
 
@@ -160,7 +162,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Watch-Vencord.ps1 -Che
 Get-Content .\runtime\watcher.log -Tail 30
 
 # Afficher la tâche dans le planificateur.
-Get-ScheduledTask -TaskName 'Vencord AutoUpdate'
+Get-ScheduledTask -TaskName 'Vencord AutoRepair'
 
 # Vérifier une fois et réparer si nécessaire, puis quitter.
 # À utiliser lorsque la surveillance automatique est désactivée.
@@ -176,7 +178,7 @@ Conservez le dossier du projet à son emplacement tant que la tâche est active.
 ## ⏹️ Désactivation
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-AutoUpdate.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-AutoRepair.ps1
 ```
 
 Le script demande l’arrêt de la surveillance, attend la fin d’une éventuelle réparation et supprime la tâche Windows. **Discord et Vencord restent installés.** Vous pouvez ensuite supprimer le dossier du projet.
@@ -207,7 +209,7 @@ Les journaux peuvent contenir votre chemin utilisateur. Relisez et anonymisez le
 
 ```text
 Ouverture de la session Windows
-  → tâche Vencord AutoUpdate
+  → tâche Vencord AutoRepair
   → surveillance du dossier Discord configuré
   → nouvelle version ou patch Vencord manquant
   → attente de stabilité et vérification de l’updater
@@ -231,13 +233,13 @@ L’attente de stabilité réduit le risque de conflit avec une mise à jour ; e
 .
 ├── .github/workflows/verify.yml  # Vérification sous Windows PowerShell
 ├── config.example.json          # Configuration publique et générique
-├── Install-AutoUpdate.ps1        # Création et démarrage de la tâche Windows
+├── Install-AutoRepair.ps1        # Création et démarrage de la tâche Windows
 ├── Launch-Watcher.vbs           # Lancement de PowerShell sans fenêtre
 ├── Watch-Vencord.ps1            # Boucle de surveillance et état local
-├── VencordAutoUpdate.psm1       # Configuration, détection et réparation
+├── VencordAutoRepair.psm1       # Configuration, détection et réparation
 ├── Stop-Watcher.ps1             # Arrêt propre après l’opération en cours
-├── Uninstall-AutoUpdate.ps1      # Arrêt et suppression de la tâche
-├── tests/Verify-AutoUpdate.ps1   # Tests sur installations factices
+├── Uninstall-AutoRepair.ps1      # Arrêt et suppression de la tâche
+├── tests/Verify-AutoRepair.ps1   # Tests sur installations factices
 ├── LICENSE                      # Licence MIT des scripts
 └── README.md                    # Installation et utilisation
 ```
@@ -249,7 +251,7 @@ L’attente de stabilité réduit le risque de conflit avec une mise à jour ; e
 ## 🧪 Tests
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Verify-AutoUpdate.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Verify-AutoRepair.ps1
 ```
 
 Les tests créent des fichiers factices dans `tests/.tmp/`, remplacent les appels de réparation par des simulations et nettoient leur dossier à la fin. Ils ne ferment pas votre Discord, n’exécutent pas l’installateur réel et n’accèdent pas au réseau.

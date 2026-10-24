@@ -1,7 +1,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Get-AutoUpdateConfig {
+function Get-AutoRepairConfig {
     param([Parameter(Mandatory)][string]$ProjectPath)
     $configPath = Join-Path $ProjectPath 'config.json'
     if (-not (Test-Path -LiteralPath $configPath -PathType Leaf)) {
@@ -118,7 +118,7 @@ function Test-DiscordUpdaterBusy {
     return $false
 }
 
-function Write-AutoUpdateLog {
+function Write-AutoRepairLog {
     param([Parameter(Mandatory)][string]$RuntimePath, [Parameter(Mandatory)][string]$Message)
     $log = Join-Path $RuntimePath 'watcher.log'
     if ((Test-Path -LiteralPath $log) -and (Get-Item -LiteralPath $log).Length -gt 2097152) {
@@ -131,7 +131,7 @@ function Get-OfficialInstaller {
     param([Parameter(Mandatory)][string]$RuntimePath)
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/Vencord/Installer/releases/latest' `
-        -Headers @{ 'User-Agent' = 'VencordAutoUpdate' } -TimeoutSec 30
+        -Headers @{ 'User-Agent' = 'VencordAutoRepair' } -TimeoutSec 30
     $assets = @($release.assets | Where-Object name -eq 'VencordInstallerCli.exe')
     if ($assets.Count -ne 1) { throw 'Installateur CLI officiel introuvable.' }
     $asset = $assets[0]
@@ -172,7 +172,7 @@ function Invoke-VencordRepair {
     $process = $null
     $stdout = Join-Path $RuntimePath 'installer.stdout.log'
     $stderr = Join-Path $RuntimePath 'installer.stderr.log'
-    Write-AutoUpdateLog $RuntimePath ('Reparation de Discord {0}; relance={1}.' -f $Snapshot.Version, $wasRunning)
+    Write-AutoRepairLog $RuntimePath ('Reparation de Discord {0}; relance={1}.' -f $Snapshot.Version, $wasRunning)
     try {
         # Only stop processes belonging to this Discord installation.
         foreach ($discord in $running) { Stop-Process -Id $discord.Id -Force -ErrorAction SilentlyContinue }
@@ -210,9 +210,9 @@ function Invoke-VencordRepair {
             if ($restartTarget -and ($success -or -not $process -or (Test-VencordPatch $restartTarget $VencordPath))) {
                 Start-Process -FilePath (Join-Path $restartTarget.Directory 'Discord.exe') `
                     -WorkingDirectory $restartTarget.Directory -WindowStyle Normal | Out-Null
-                Write-AutoUpdateLog $RuntimePath 'Discord relance.'
+                Write-AutoRepairLog $RuntimePath 'Discord relance.'
             } else {
-                Write-AutoUpdateLog $RuntimePath 'Reparation incomplete : Discord reste ferme; consulter les journaux.'
+                Write-AutoRepairLog $RuntimePath 'Reparation incomplete : Discord reste ferme; consulter les journaux.'
             }
         }
     }
@@ -225,5 +225,5 @@ function Get-RepairReason {
     return $null
 }
 
-Export-ModuleMember -Function Get-AutoUpdateConfig, Get-DiscordSnapshot, Test-VencordPatch, Get-DiscordProcesses,
-    Test-DiscordUpdaterBusy, Write-AutoUpdateLog, Get-OfficialInstaller, Invoke-VencordRepair, Get-RepairReason
+Export-ModuleMember -Function Get-AutoRepairConfig, Get-DiscordSnapshot, Test-VencordPatch, Get-DiscordProcesses,
+    Test-DiscordUpdaterBusy, Write-AutoRepairLog, Get-OfficialInstaller, Invoke-VencordRepair, Get-RepairReason
